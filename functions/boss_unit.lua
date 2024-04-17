@@ -79,14 +79,19 @@ local function on_entity_damaged(event)
 	local unit = global.high_health_units[entity.unit_number]
 	if not unit then return end
 	if entity.health == 0 then
-		local adjustment = math.min(unit.health_factor - 1, 1)
+		local health_factor = unit.health_factor
+		local adjustment = math.min(health_factor - 1, 1)
+
 		entity.health = entity.prototype.max_health * adjustment
-		unit.health_factor = unit.health_factor - adjustment
+
+		health_factor = health_factor - adjustment
+		unit.health_factor = health_factor
+
 		if unit.healthbar_id then
-			set_healthbar(unit.healthbar_id, unit.health_factor / unit.original_health_factor)
+			set_healthbar(unit.healthbar_id, health_factor / unit.original_health_factor)
 		end
 		-- Slightly over 1 just to deal with weird floating point math possibilities
-		if unit.health_factor <= 1.0000001 then
+		if health_factor <= 1.0000001 then
 			global.high_health_units[entity.unit_number] = nil
 			-- We do not destroy unit.healthbar_id here because we want it to
 			-- remain visible for the units "last life". It will automatically
@@ -94,7 +99,7 @@ local function on_entity_damaged(event)
 			if unit.text_id then rendering.destroy(unit.text_id) end
 		else
 			if unit.text_id then
-				rendering.set_text(unit.text_id, health_factor_to_rendered_string(unit.health_factor))
+				rendering.set_text(unit.text_id, health_factor_to_rendered_string(health_factor))
 			end
 		end
 	end
