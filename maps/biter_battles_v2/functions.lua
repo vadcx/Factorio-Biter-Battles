@@ -188,20 +188,28 @@ function Public.biters_landfill(entity)
 	local position = entity.position
 	if math_abs(position.y) < 8 then return true end
 	local surface = entity.surface
-	for _, vector in pairs(landfill_biters_vectors) do
-		local tile = surface.get_tile({position.x + vector[1], position.y + vector[2]})
+
+	local lf_vectors = landfill_biters_vectors
+	for i = 1, #lf_vectors do
+		local vec_x, vec_y = lf_vectors[i][1], lf_vectors[i][2]
+		local tile = surface.get_tile(position.x + vec_x, position.y + vec_y)
+
 		if tile.collides_with("resource-layer") then
 			surface.set_tiles({{name = "landfill", position = tile.position}})
-			local particle_pos = {tile.position.x + 0.5, tile.position.y + 0.5}
+
+			local particle_movement = {0, 0}
+			local particle_data = {
+				name = "stone-particle",
+				position = {tile.position.x + 0.5, tile.position.y + 0.5},
+				frame_speed = 0.1,
+				vertical_speed = 0.12,
+				height = 0.01,
+				movement = particle_movement
+			}
+
 			for _ = 1, 50, 1 do
-				surface.create_particle({
-					name = "stone-particle",
-					position = particle_pos,
-					frame_speed = 0.1,
-					vertical_speed = 0.12,
-					height = 0.01,
-					movement = {-0.05 + math_random(0, 100) * 0.001, -0.05 + math_random(0, 100) * 0.001}
-				})
+				particle_movement[1], particle_movement[2] = -0.05 + math_random(0, 100) * 0.001, -0.05 + math_random(0, 100) * 0.001
+				surface.create_particle(particle_data)
 			end
 		end
 	end
