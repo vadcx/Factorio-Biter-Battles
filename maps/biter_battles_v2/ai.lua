@@ -96,33 +96,30 @@ local function spawn_biters(isItnormalBiters, maxLoopIteration,spawner,biter_thr
 	-- *20 because one boss is equal of 20 biters in theory
 	-- formula because 90% revive chance is 1/(1-0.9) = 10, which means biters needs to be killed 10 times, so *10 . easy fast-check : 50% revive is 2 biters worth, formula matches. 0% revive -> 1 biter worth
 	local health_buff_equivalent_revive = 1.0/(1.0-global.reanim_chance[game.forces[biter_force_name].index]/100)
-	if not isItnormalBiters then
-		health_buff_equivalent_revive = health_buff_equivalent_revive * 20
-	end
+	local health_factor = bb_config.health_multiplier_boss*health_buff_equivalent_revive
 	local i = #valid_biters
 	for _ = 1, maxLoopIteration, 1 do
-		local unit_name = BiterRaffle.roll(roll_type, global.bb_evolution[biter_force_name])
 		if isItnormalBiters and biter_threat < 0 then break end
-		if not isItnormalBiters and biter_threat - threat_values[unit_name] * health_buff_equivalent_revive < 0 then break end -- Do not add a biter if it will make the threat goes negative when all the biters of wave were killed
+
+		local unit_name = BiterRaffle.roll(roll_type, global.bb_evolution[biter_force_name])
+
+		if not isItnormalBiters and biter_threat - threat_values[unit_name] * 20 * health_buff_equivalent_revive < 0 then break end -- Do not add a biter if it will make the threat goes negative when all the biters of wave were killed
 		local position = spawner.surface.find_non_colliding_position(unit_name, spawner.position, 128, 2)
 		if not position then break end
 		local biter
 
 		if isItnormalBiters then
 			biter = spawner.surface.create_entity({name = unit_name, force = biter_force_name, position = position})
-		else
-			biter = spawner.surface.create_entity({name = unit_name, force = boss_biter_force_name, position = position})
-		end
-		if isItnormalBiters then
 			biter_threat = biter_threat - threat_values[biter.name]
 		else
-			biter_threat = biter_threat - threat_values[biter.name] * health_buff_equivalent_revive
+			biter = spawner.surface.create_entity({name = unit_name, force = boss_biter_force_name, position = position})
+			-- 20 because boss is 20 biters equivalent with health buff included
+			biter_threat = biter_threat - threat_values[biter.name] * 20 * health_buff_equivalent_revive
+			BossUnit.add_boss_unit(biter, health_factor, 0.55)
 		end
+
 		i = i + 1
 		valid_biters[i] = biter
-		if health_buff_equivalent_revive > 1 then
-			BossUnit.add_high_health_unit(biter, health_buff_equivalent_revive, not isItnormalBiters)
-		end
 
 		--Announce New Spawn
 		if(isItnormalBiters and global.biter_spawn_unseen[force_name][unit_name]) then
